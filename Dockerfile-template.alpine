@@ -1,0 +1,45 @@
+# ffmpeg - http://ffmpeg.org/download.html
+#
+# https://hub.docker.com/r/jrottenberg/ffmpeg/
+#
+#
+FROM        alpine:3.4
+MAINTAINER  Julien Rottenberg <julien@rottenberg.info>
+
+
+CMD         ["--help"]
+ENTRYPOINT  ["ffmpeg"]
+WORKDIR     /tmp/workdir
+
+
+ENV         %%ENV%%
+
+RUN     buildDeps="autoconf \
+                   automake \
+                   bash \
+                   binutils \
+                   bzip2 \
+                   cmake \
+                   curl \
+                   coreutils \
+                   g++ \
+                   gcc \
+                   gnupg \
+                   libtool \
+                   make \
+                   python \
+                   openssl-dev \
+                   tar \
+                   yasm \
+                   zlib-dev" && \
+        export MAKEFLAGS="-j$(($(grep -c ^processor /proc/cpuinfo) + 1))" && \
+        apk  add --update ${buildDeps} libgcc libstdc++ ca-certificates && \
+%%RUN%%
+# cleanup
+        cd && \
+        apk del ${buildDeps} && \
+	rm -rf /var/cache/apk/* /usr/local/include && \
+        ffmpeg -buildconf
+
+# Let's make sure the app built correctly
+# Convenient to verify on https://hub.docker.com/r/jrottenberg/ffmpeg/builds/ console output

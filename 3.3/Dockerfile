@@ -1,9 +1,11 @@
 # ffmpeg - http://ffmpeg.org/download.html
 #
+# From https://trac.ffmpeg.org/wiki/CompilationGuide/Ubuntu
+#
 # https://hub.docker.com/r/jrottenberg/ffmpeg/
 #
 #
-FROM        alpine:3.4
+FROM        ubuntu:16.04
 MAINTAINER  Julien Rottenberg <julien@rottenberg.info>
 
 
@@ -12,7 +14,7 @@ ENTRYPOINT  ["ffmpeg"]
 WORKDIR     /tmp/workdir
 
 
-ENV         FFMPEG_VERSION=3.0.7     \
+ENV         FFMPEG_VERSION=3.3.1     \
             FDKAAC_VERSION=0.1.5      \
             LAME_VERSION=3.99.5       \
             OGG_VERSION=1.3.2         \
@@ -36,26 +38,26 @@ ARG         XVID_SHA256SUM="4e9fd62728885855bc5007fe1be58df42e5e274497591fec3724
 ARG         FFMPEG_KEY="D67658D8"
 
 
-RUN     buildDeps="autoconf \
-                   automake \
-                   bash \
-                   binutils \
-                   bzip2 \
-                   cmake \
-                   curl \
-                   coreutils \
-                   g++ \
-                   gcc \
-                   gnupg \
-                   libtool \
-                   make \
-                   python \
-                   openssl-dev \
-                   tar \
-                   yasm \
-                   zlib-dev" && \
-        export MAKEFLAGS="-j$(($(grep -c ^processor /proc/cpuinfo) + 1))" && \
-        apk  add --update ${buildDeps} libgcc libstdc++ ca-certificates && \
+RUN      buildDeps="autoconf \
+                    automake \
+                    cmake \
+                    curl \
+                    bzip2 \
+                    g++ \
+                    gcc \
+                    git \
+                    libtool \
+                    make \
+                    nasm \
+                    perl \
+                    pkg-config \
+                    python \
+                    libssl-dev \
+                    yasm \
+                    zlib1g-dev" && \
+        export MAKEFLAGS="-j$(($(nproc) + 1))" && \
+        apt-get -yqq update && \
+        apt-get install -yq --no-install-recommends ${buildDeps} ca-certificates && \
 #RUN  \
 ## opencore-amr https://sourceforge.net/projects/opencore-amr/
         DIR=$(mktemp -d) && cd ${DIR} && \
@@ -212,10 +214,12 @@ RUN     buildDeps="autoconf \
         cp qt-faststart ${SRC}/bin && \
         rm -rf ${DIR} && \
 
-# cleanup
+## cleanup
         cd && \
-        apk del ${buildDeps} && \
-	rm -rf /var/cache/apk/* /usr/local/include && \
+        apt-get purge -y ${buildDeps} && \
+        apt-get autoremove -y && \
+        apt-get clean -y && \
+        rm -rf /var/lib/apt/lists && \
         ffmpeg -buildconf
 
 # Let's make sure the app built correctly
